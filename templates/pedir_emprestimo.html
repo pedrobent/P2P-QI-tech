@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pedir Empréstimo - P2P Bank{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Solicitar um Empréstimo</h1>
+    <p>Preencha os detalhes abaixo. Sua taxa de juros será calculada com base no seu perfil de risco.</p>
+    <form id="loan-request-form" class="auth-form">
+        <div class="form-group">
+            <label for="valor_solicitado">Quanto você quer receber?</label>
+            <input type="number" step="0.01" id="valor_solicitado" name="valor_solicitado" placeholder="5000.00" required>
+        </div>
+        <div class="form-group">
+            <label for="meses_parcelamento">Em quantos meses quer parcelar?</label>
+            <input type="number" id="meses_parcelamento" name="meses_parcelamento" placeholder="12" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full-width">Calcular e Pedir Empréstimo</button>
+    </form>
+    <div id="loan-result" class="loan-result-box" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;">
+        </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+document.getElementById('loan-request-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    // --- SIMULAÇÃO DE AUTENTICAÇÃO ---
+    // Em uma aplicação real, o ID do usuário viria de um sistema de login.
+    // Para nosso teste, vamos definir que o tomador é o usuário de ID 1.
+    // Lembre-se de aprovar o KYC deste usuário no painel de Admin!
+    const userId = 1;
+    data.user_id = userId; // Adiciona o ID do usuário aos dados a serem enviados
+
+    const resultBox = document.getElementById('loan-result');
+
+    try {
+        const response = await fetch('/api/pedir-emprestimo/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        const resultData = await response.json();
+
+        if (response.ok) {
+            resultBox.style.color = 'black';
+            resultBox.innerHTML = `
+                <h4>${resultData.mensagem}</h4>
+                <p><strong>Risco Calculado:</strong> ${resultData.risco_calculado}</p>
+                <p><strong>Taxa de Juros:</strong> ${resultData.taxa_juros_aplicada}</p>
+                <p><strong>Valor da Parcela:</strong> R$ ${resultData.valor_da_parcela}</p>
+                <hr>
+                <p><strong>Valor Total a Pagar:</strong> R$ ${resultData.valor_total_a_pagar}</p>
+            `;
+            resultBox.style.display = 'block';
+            form.reset(); // Limpa o formulário
+        } else {
+            resultBox.style.color = 'red';
+            resultBox.innerHTML = `<h4>Erro: ${resultData.erro}</h4>`;
+            resultBox.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error('Erro ao enviar o formulário:', error);
+        resultBox.style.color = 'red';
+        resultBox.innerHTML = '<h4>Erro de conexão. Não foi possível conectar ao servidor.</h4>';
+        resultBox.style.display = 'block';
+    }
+});
+</script>
+{% endblock %}

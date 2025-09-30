@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meus Empréstimos - P2P Bank{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <h1>Painel do Investidor</h1>
+    
+    <nav class="tabs">
+        <a href="{% url 'dashboard' %}" class="tab">Oportunidades de Investimento</a>
+        <a href="{% url 'meus_emprestimos' %}" class="tab active">Meus Empréstimos</a>
+         <a href="{% url 'pedir_emprestimo' %}" class="btn btn-primary tab-action-btn">+ Pedir Empréstimo</a>
+    </nav>
+
+    <div class="tab-content" id="my-loans-container">
+        <h2>Meus Investimentos e Pedidos</h2>
+        <p>Em breve, seus empréstimos financiados e seus pedidos aparecerão aqui.</p>
+        </div>
+</section>
+{% endblock %}

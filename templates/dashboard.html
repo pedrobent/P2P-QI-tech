@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard do Investidor - P2P Bank{% endblock %}
+
+{% block content %}
+<section class="dashboard">
+    <h1>Painel do Investidor</h1>
+    
+    <nav class="tabs">
+        <a href="{% url 'dashboard' %}" class="tab active">Oportunidades de Investimento</a>
+        <a href="{% url 'meus_emprestimos' %}" class="tab">Meus Empréstimos</a>
+        <a href="{% url 'pedir_emprestimo' %}" class="btn btn-primary tab-action-btn">+ Pedir Empréstimo</a>
+    </nav>
+
+    <div class="tab-content" id="loan-list-container">
+        <h2>Empréstimos disponíveis para financiar</h2>
+        </div>
+</section>
+{% endblock %}

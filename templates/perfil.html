@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meu Perfil - P2P Bank{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <h1>Meu Perfil</h1>
+    <p>Olá, <strong>{{ user.username }}</strong>! Acompanhe aqui seu status de verificação.</p>
+
+    <div class="kyc-status-box status-{{ user.kyc_status|lower }}">
+        <p>Status da Verificação: <strong>{{ user.get_kyc_status_display }}</strong></p>
+    </div>
+
+    {% if user.kyc_status == 'PENDENTE' %}
+        <div class="form-container" style="margin-top: 30px; margin-left: 0; margin-right: 0;">
+            <h3>Complete sua verificação</h3>
+            <p>Envie uma foto do seu documento (RG ou CNH) e uma selfie segurando o documento para aprovação.</p>
+            <form id="kyc-form" enctype="multipart/form-data" class="auth-form">
+                <div class="form-group">
+                    <label for="foto_documento_frente">Foto do Documento (Frente)</label>
+                    <input type="file" id="foto_documento_frente" name="foto_documento_frente" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label for="foto_documento_verso">Foto do Documento (Verso)</label>
+                    <input type="file" id="foto_documento_verso" name="foto_documento_verso" accept="image/*" required>
+                </div>
+                <div class="form-group">
+                    <label for="selfie">Sua Selfie</label>
+                    <input type="file" id="selfie" name="selfie" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full-width">Enviar Documentos</button>
+            </form>
+            <div id="feedback-message" style="margin-top: 20px;"></div>
+        </div>
+    {% elif user.kyc_status == 'APROVADO' %}
+        <p style="margin-top: 20px; color: var(--secondary-color);">Parabéns! Sua conta foi verificada e você já pode pedir empréstimos.</p>
+    {% else %}
+         <p style="margin-top: 20px; color: #e53935;">Sua verificação foi reprovada. Por favor, entre em contato com o suporte.</p>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const kycForm = document.getElementById('kyc-form');
+    const feedbackMessage = document.getElementById('feedback-message');
+    
+    // Verificamos se o formulário existe na página antes de adicionar o listener
+    if (kycForm) {
+        kycForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            // SIMULAÇÃO: Pegamos o ID do usuário.
+            // Em uma aplicação real, isso viria de um sistema de login.
+            const userId = {{ user.id }};
+
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            // MODIFICADO/ADICIONADO:
+            formData.append('foto_documento_frente', document.getElementById('foto_documento_frente').files[0]);
+            formData.append('foto_documento_verso', document.getElementById('foto_documento_verso').files[0]);
+            formData.append('selfie', document.getElementById('selfie').files[0]);
+
+            try {
+                // ETAPA 1: Enviar os arquivos para o backend
+                feedbackMessage.innerText = 'Enviando documentos...';
+                feedbackMessage.style.color = 'blue';
+
+                const uploadResponse = await fetch('/api/upload-documentos/', {
+                    method: 'POST',
+                    body: formData // Para FormData, o navegador define o Content-Type correto automaticamente
+                });
+                
+                if (!uploadResponse.ok) {
+                    throw new Error('Falha ao enviar os documentos.');
+                }
+                
+                const uploadResult = await uploadResponse.json();
+                feedbackMessage.innerText = uploadResult.mensagem + ' Agora, iniciando a verificação...';
+                
+                // ETAPA 2: Acionar o processo de KYC
+                const kycResponse = await fetch('/api/iniciar-kyc/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: userId })
+                });
+
+                if (!kycResponse.ok) {
+                    throw new Error('Falha ao iniciar o processo de KYC.');
+                }
+
+                const kycResult = await kycResponse.json();
+
+                // ETAPA 3: Mostrar o resultado final e recarregar a página (VERSÃO MELHORADA)
+                let motivo = ''; // Variável para guardar o motivo do erro
+
+                // Verificamos qual informação de erro o backend nos enviou
+                if (kycResult.detalhes) {
+                    motivo = `OCR: ${kycResult.detalhes.ocr_match}, Face: ${kycResult.detalhes.face_match}, Base Pública: ${kycResult.detalhes.sem_restricoes_publicas}`;
+                } else if (kycResult.motivo) {
+                    motivo = kycResult.motivo;
+                } else {
+                    motivo = 'Nenhum detalhe fornecido pelo servidor.';
+                }
+
+                if (kycResult.status === 'APROVADO') {
+                    feedbackMessage.innerText = 'Verificação concluída: APROVADO! A página será atualizada.';
+                    feedbackMessage.style.color = 'green';
+                } else {
+                    // Usamos a variável 'motivo' que preparamos
+                    feedbackMessage.innerText = `Verificação concluída: ${kycResult.status}. Motivo: ${motivo}`;
+                    feedbackMessage.style.color = 'red';
+                }
+
+                // Recarrega a página após 5 segundos para dar tempo de ler a mensagem
+                setTimeout(() => window.location.reload(), 5000);
+
+            } catch (error) {
+                console.error('Erro no processo de KYC:', error);
+                feedbackMessage.innerText = 'Ocorreu um erro: ' + error.message;
+                feedbackMessage.style.color = 'red';
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}P2P Bank{% endblock %}</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
+    <link rel="stylesheet" href="{% static 'global/css/style.css' %}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">P2P Bank</a>
+            <div class="user-menu">
+                {% if user.is_authenticated %}
+                    <span class="welcome-message">Olá, {{ user.username }}!</span>
+                    <a href="{% url 'perfil' %}" class="btn-icon" title="Meu Perfil">
+                        <i class="fa-solid fa-circle-user"></i>
+                    </a>
+                    <a href="{% url 'logout' %}" class="btn-icon" title="Sair">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-login">Login</a>
+                    <a href="{% url 'cadastro' %}" class="btn btn-primary">Cadastre-se</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+
+    <script src="{% static 'global/js/emprestimo.js' %}"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
